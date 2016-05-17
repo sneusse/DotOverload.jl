@@ -116,3 +116,7 @@ I'm not sure if I caught all the special cases (well, I only caught one so far):
 something.somefunc(args) = args.field * 2
 ```
 
+### Differences between v0.4 and v0.5
+
+In Julia v0.4 it is possible to define the ```getMember``` overload *after* the block using the method. In v0.5 this does not seem to work and I'm not sure why (only tested the REPL)
+
