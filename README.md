@@ -143,7 +143,7 @@ end
 
 *More crazyness*
 
-Providing setters & getters for your custom types
+Providing setters, getters and attached methods for your custom types
 (not properly implemented!)
 
 ```julia
@@ -208,12 +208,63 @@ macro setter(ex::Expr)
     return mysetter
 end
 
+macro method(ex::Expr)
+
+  # we need more sanity checks!
+  if (ex.head != :(=))
+    error("Nope")
+  end
+
+  # T is our type
+  T = ex.args[1].args[1]
+
+  # F is our property
+  # FN is the name of our property
+  F = ex.args[1].args[2]
+  FN = F.args[1]
+
+  # P is our parameter or tuple of parameters
+  # B is the block of code
+  P = ex.args[2].args[1]
+  B = ex.args[2].args[2]
+
+  if (isa(P, Expr))
+    P = P.args
+  else
+    P = [P]
+  end
+
+  # create method for field access
+  @eval DotOverload.getMember(t::$T, f::Symbol) = DotOverload.getMember(t::$T, Field{f})
+
+  # create name for dispatchable function
+  funname = Symbol("_method_"*string(T)*"_"*string(FN))
+
+  # bind the function to the property
+  mymethod = eval( Expr(:function, Expr(:call, funname, P...), B) )
+  mymethod = @eval DotOverload.getMember(self::$T, ::Type{Field{$F}}) = $mymethod
+
+  # create catch-all method to support access without a property
+  @eval DotOverload.getMember{Q}(t::$T, ::Type{Field{Q}}) = Base.getfield(t, Q)
+
+  return mymethod
+end
+
 type MyType
   _val::Int64
 end
 
 @getter MyType.Value = Int64(self._val / 2)
 @setter MyType.Value = self._val = Int64(value * 2)
+@method MyType.multi = function()
+  println("NOSTUFF!")
+end
+@method MyType.multi = function(stuff)
+  println("some stuff: $stuff")
+end
+@method MyType.multi = function(stuff, more)
+  println("first stuff: $stuff and more stuff: $more")
+end
 
 o = MyType(3)
 
@@ -222,6 +273,9 @@ o = MyType(3)
   o.Value = 42
   println("o._val is $(o._val)")
   println("o.Value is $(o.Value)")
+  o.multi()
+  o.multi(1)
+  o.multi(1,2)
 end
 
 ```
