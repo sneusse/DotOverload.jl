@@ -16,6 +16,8 @@ So I can copy/paste matplotlib examples, as I have no clue how that works and I'
 
 ## Example
 
+*Basics*
+
 ```julia
 
 using DotOverload
@@ -101,6 +103,43 @@ end #module
 
 
 ```
+
+*Advanced*
+What if we want "dispatch on values" ?
+
+```julia
+
+using DotOverload
+
+type Field{TName}
+end
+
+DotOverload.getMember(t::Dict, ::Type{Field{:a}}) = "a is always 42"
+DotOverload.getMember{T}(t::Dict, f::Type{Field{T}}) = t[T]
+DotOverload.getMember(t::Dict, f::Symbol) = DotOverload.getMember(t::Dict, Field{f})
+DotOverload.setMember!(t::Dict, f::Symbol, v) = t[f] = v
+
+@dotted begin
+  d = Dict()
+
+  d.b = 42
+  println(d.a) # note that d.a is not defined yet!
+  # prints "a is always 42"
+  
+  println("b is: $(d.b) - this time")
+  # prints "b is: 42 - this time"
+
+  d.a = 43
+  d.b = 43
+  println(d.a)
+  # prints "a is always 42"
+  
+  println("b is: $(d.b) - this time")
+  # prints "b is: 43 - this time"
+  
+end
+```
+
 
 ## More examples
 
