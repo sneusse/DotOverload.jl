@@ -10,6 +10,10 @@ mydict.mykey = 42
 
 It is implemented as a macro which modifies the ast of a given expression (see https://github.com/sneusse/DotOverload.jl/blob/master/src/DotOverload.jl )
 
+## Why?
+
+So I can copy/paste matplotlib examples, as I have no clue how that works and I'm tired of writing brackets.
+
 ## Example
 
 ```julia
