@@ -105,6 +105,7 @@ end #module
 ```
 
 *Advanced*
+
 What if we want "dispatch on values" ?
 
 ```julia
@@ -138,6 +139,91 @@ DotOverload.setMember!(t::Dict, f::Symbol, v) = t[f] = v
   # prints "b is: 43 - this time"
   
 end
+```
+
+*More crazyness*
+
+Providing setters & getters for your custom types
+(not properly implemented!)
+
+```julia
+using DotOverload
+
+type Field{TName}
+end
+
+macro getter(ex::Expr)
+
+  # we need more sanity checks!
+  if (ex.head != :(=))
+    error("Nope")
+  end
+
+  # T is our type
+  T = ex.args[1].args[1]
+
+  # F is our property
+  F = ex.args[1].args[2]
+
+  # B is the block of code
+  B = ex.args[2]
+
+  # create method for field access
+  @eval DotOverload.getMember(t::$T, f::Symbol) = DotOverload.getMember(t::$T, Field{f})
+
+  # create method for the _specific_ field access
+  mygetter = @eval DotOverload.getMember(self::$T, ::Type{Field{$F}}) = $B
+
+  # create catch-all method to support access without a property
+  @eval DotOverload.getMember{Q}(t::$T, ::Type{Field{Q}}) = Base.getfield(t, Q)
+
+  return mygetter
+end
+
+macro setter(ex::Expr)
+
+    # we need more sanity checks!
+    if (ex.head != :(=))
+      error("Nope")
+    end
+
+    # T is our type
+    T = ex.args[1].args[1]
+
+    # F is our property
+    F = ex.args[1].args[2]
+
+    # B is the block of code
+    B = ex.args[2]
+
+    # create method for field access
+    @eval DotOverload.setMember!(t::$T, f::Symbol, value) = DotOverload.setMember!(t::$T, Field{f}, value)
+
+    # create method for the _specific_ field access
+    mysetter = @eval DotOverload.setMember!(self::$T, ::Type{Field{$F}}, value) = $B
+
+    # create catch-all method to support access without a property
+    @eval DotOverload.setMember!{Q}(t::$T, ::Type{Field{Q}}, value) = Base.setfield!(t, Q, value)
+
+    return mysetter
+end
+
+type MyType
+  _val::Int64
+end
+
+@getter MyType.Value = Int64(self._val / 2)
+@setter MyType.Value = self._val = Int64(value * 2)
+
+o = MyType(3)
+
+@dotted begin
+  o = MyType(0)
+  o.Value = 42
+  println("o._val is $(o._val)")
+  println("o.Value is $(o.Value)")
+end
+
 ```
 
 
