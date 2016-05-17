@@ -8,9 +8,7 @@ mydict.mykey = 42
 ```
 (see https://github.com/JuliaLang/julia/issues/1974)
 
-The examples
-
-It is implemented as a macro which modifies the ast of a given expression
+It is implemented as a macro which modifies the ast of a given expression (see https://github.com/sneusse/DotOverload.jl/blob/master/src/DotOverload.jl )
 
 ## Example
 
